@@ -34,6 +34,7 @@ function load(){
   try { const s = JSON.parse(localStorage.getItem(SET_KEY)); if (s) settings = Object.assign(settings, s); } catch {}
   if (localStorage.getItem(TX_KEY) === null) { txs = sampleData(); save(); }
   applyTheme(settings.theme || 'light');
+  initParticles();
 }
 function save(){ localStorage.setItem(TX_KEY, JSON.stringify(txs)); }
 function saveSettings(){ localStorage.setItem(SET_KEY, JSON.stringify(settings)); }
@@ -58,6 +59,108 @@ const today = () => dayKey(new Date());
 const catName = (type,id) => (CATS[type].find(c=>c.id===id)||{name:id,ico:'•'});
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+/* ---------- ANIMATED NUMBER COUNTER ---------- */
+function animateValue(el, start, end, duration, prefix=''){
+  const range = end - start;
+  const startTime = performance.now();
+  const step = (ts) => {
+    const progress = Math.min((ts - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + range * eased;
+    el.textContent = prefix + Math.round(current).toLocaleString('en-US');
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ---------- CONFETTI SYSTEM ---------- */
+function launchConfetti(){
+  const canvas = $('#confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const colors = ['#2867FF','#792BFF','#4f8cff','#9d6bff','#16b981','#f0426a','#ffd700'];
+  const pieces = [];
+  const count = 80;
+  
+  for (let i = 0; i < count; i++){
+    pieces.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 15,
+      vy: (Math.random() - 0.5) * 15 - 5,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 10,
+      gravity: 0.3,
+      life: 1,
+      decay: Math.random() * 0.015 + 0.01
+    });
+  }
+  
+  let frame;
+  const render = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    pieces.forEach(p => {
+      if (p.life <= 0) return;
+      alive = true;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.99;
+      p.rotation += p.rotSpeed;
+      p.life -= p.decay;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
+      ctx.restore();
+    });
+    if (alive) frame = requestAnimationFrame(render);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+  cancelAnimationFrame(frame);
+  render();
+}
+
+/* ---------- SUCCESS POPUP ---------- */
+function showSuccess(text){
+  const popup = $('#successPopup');
+  $('#successText').textContent = text || 'Saved!';
+  popup.hidden = false;
+  requestAnimationFrame(() => popup.classList.add('show'));
+  launchConfetti();
+  setTimeout(() => {
+    popup.classList.remove('show');
+    setTimeout(() => popup.hidden = true, 300);
+  }, 1500);
+}
+
+/* ---------- FLOATING PARTICLES ---------- */
+function initParticles(){
+  const container = $('#particles');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < 15; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 6 + 3;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    container.appendChild(p);
+  }
+}
+
+/* ---------- TOAST ---------- */
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   requestAnimationFrame(()=>t.classList.add('show'));
@@ -65,6 +168,7 @@ function toast(msg){
   toast._t = setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.hidden=true,300); }, 2200);
 }
 
+/* ---------- SAMPLE DATA ---------- */
 function sampleData(){
   const out = [], now = new Date();
   const mk = (daysAgo,type,cat,amt,note)=>{
@@ -89,6 +193,7 @@ function sampleData(){
   return out;
 }
 
+/* ---------- NAVIGATION ---------- */
 function go(page){
   ui.page = page;
   $$('.page').forEach(p=>p.classList.toggle('active', p.dataset.page===page));
@@ -99,6 +204,7 @@ function go(page){
   window.scrollTo({top:0});
 }
 
+/* ---------- CALCULATIONS ---------- */
 function totals(){
   let inc=0, exp=0;
   txs.forEach(t=> t.type==='income' ? inc+=+t.amount : exp+=+t.amount);
@@ -109,18 +215,29 @@ function monthSpend(){
   return txs.filter(t=>t.type==='expense'&&t.date.slice(0,7)===k).reduce((s,t)=>s+ +t.amount,0);
 }
 
+/* ---------- RENDER HOME ---------- */
 function renderHome(){
   const {inc,exp,bal} = totals();
   const h = new Date().getHours();
   $('#greetTitle').textContent = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
   const name = settings.name ? ', '+settings.name.split(' ')[0] : '';
   $('#greetSub').textContent = (name?'Welcome back'+name+'!':'Welcome back!')+' Here\'s your money at a glance.';
-  $('#balanceValue').textContent = fmt(bal);
+  
+  // Animated balance counter
+  const balEl = $('#balanceValue');
+  const currentBal = parseFloat(balEl.dataset.value || 0);
+  balEl.dataset.value = bal;
+  animateValue(balEl, currentBal, bal, 800, settings.symbol);
+  
   $('#balanceCount').textContent = txs.length + ' transactions';
   $('#balanceMonth').textContent = new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
-  $('#statIncome').textContent = fmt(inc);
-  $('#statExpense').textContent = fmt(exp);
-  $('#statSavings').textContent = inc>0 ? Math.max(0,Math.round((inc-exp)/inc*100))+'%' : '0%';
+  
+  // Animate stat values
+  animateValue($('#statIncome'), 0, inc, 1000, settings.symbol);
+  animateValue($('#statExpense'), 0, exp, 1000, settings.symbol);
+  const savingsRate = inc>0 ? Math.max(0,Math.round((inc-exp)/inc*100)) : 0;
+  animateValue($('#statSavings'), 0, savingsRate, 1000, '', '%');
+  $('#statSavings').textContent = savingsRate + '%';
 
   const months=[]; const now=new Date();
   for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d); }
@@ -164,6 +281,7 @@ function emptyHTML(title,sub){
   return `<div class="empty"><div class="e-ico">S</div><b>${title}</b>${sub}</div>`;
 }
 
+/* ---------- RENDER ANALYTICS ---------- */
 function renderAnalytics(){
   const weekly = ui.anRange==='weekly';
   const now = new Date();
@@ -220,6 +338,7 @@ function renderAnalytics(){
 function sumDay(k,type){ return txs.filter(t=>t.date===k&&t.type===type).reduce((s,t)=>s+ +t.amount,0); }
 function sumMonth(k,type){ return txs.filter(t=>t.date.slice(0,7)===k&&t.type===type).reduce((s,t)=>s+ +t.amount,0); }
 
+/* ---------- RENDER TRANSACTIONS ---------- */
 function renderTransactions(){
   let list = [...txs];
   if (ui.txFilter!=='all') list = list.filter(t=>t.type===ui.txFilter);
@@ -242,6 +361,7 @@ function renderTransactions(){
   }).join('');
 }
 
+/* ---------- RENDER PROFILE ---------- */
 function renderProfile(){
   const init = (settings.name||'S').trim().charAt(0).toUpperCase();
   $('#pfAvatar').textContent = init; $('#avatarInitial').textContent = init;
@@ -259,6 +379,7 @@ function render(){
   else renderProfile();
 }
 
+/* ---------- SVG CHARTS ---------- */
 function svgBars(data,{height}){
   const W=320,H=height+26,n=data.length,max=Math.max(...data.map(d=>d.value),1);
   const bw=Math.min(34,(W-20)/n*0.55), gap=(W-20-n*bw)/(n-1||1);
@@ -331,6 +452,7 @@ function svgRing(pct){
     <text x="55" y="60" text-anchor="middle" font-size="18" font-weight="800" fill="var(--ink)">${pct}%</text></svg>`;
 }
 
+/* ---------- SHEET ---------- */
 function openSheet(type){
   ui.sheetType = type || 'expense';
   $('#txDate').value = today();
@@ -352,6 +474,7 @@ function syncTypeUI(){
       <span class="c-ico">${c.ico}</span>${c.name}</button>`).join('');
 }
 
+/* ---------- EVENTS ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   load(); render(); renderProfile();
 
@@ -382,13 +505,20 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const chip=e.target.closest('[data-cat]'); if(!chip)return;
     ui.sheetCat=chip.dataset.cat; syncTypeUI();
   });
+  
   $('#saveTx').addEventListener('click',()=>{
     const amt=parseFloat($('#txAmount').value);
-    if(!amt||amt<=0){ toast('Enter a valid amount'); $('#txAmount').focus(); return; }
+    if(!amt||amt<=0){ 
+      toast('Enter a valid amount'); 
+      $('#txAmount').focus();
+      $('#amount-box')?.classList.add('shake');
+      setTimeout(()=>$('#amount-box')?.classList.remove('shake'),400);
+      return; 
+    }
     txs.push({ id:uid(), type:ui.sheetType, category:ui.sheetCat, amount:amt,
       note:$('#txNote').value.trim(), date:$('#txDate').value||today(), createdAt:Date.now() });
     save(); closeSheet(); render();
-    toast(ui.sheetType==='income'?'Income added ✓':'Expense added ✓');
+    showSuccess(ui.sheetType==='income'?'Income Added!':'Expense Saved!');
   });
 
   document.addEventListener('click',e=>{
@@ -419,17 +549,24 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const [code,sym]=$('#set_currency').value.split('|');
     settings.currency=code; settings.symbol=sym;
     settings.budget=Math.max(0,parseFloat($('#set_budget').value)||0);
-    saveSettings(); renderProfile(); render(); toast('Settings saved ✓');
+    saveSettings(); renderProfile(); render(); 
+    showSuccess('Settings Saved!');
   });
   $('#exportData').addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify(txs,null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
     a.download='spendly-data.json'; a.click(); URL.revokeObjectURL(a.href); toast('Data exported');
   });
-  $('#sampleData').addEventListener('click',()=>{ txs=sampleData(); save(); render(); toast('Sample data loaded'); });
+  $('#sampleData').addEventListener('click',()=>{ txs=sampleData(); save(); render(); showSuccess('Sample Data Loaded!'); });
   $('#clearData').addEventListener('click',()=>{
     if(confirm('Delete ALL transactions? This cannot be undone.')){ txs=[]; save(); render(); toast('All data cleared'); }
   });
 
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+  
+  // Handle window resize for confetti canvas
+  window.addEventListener('resize', ()=>{
+    const canvas = $('#confettiCanvas');
+    if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  });
 });
