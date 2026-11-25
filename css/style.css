@@ -316,3 +316,4 @@ body{
   .nav-item{padding:8px 10px}
   .nav-item span{display:none}
 }
+[hidden] { display: none !important; }
