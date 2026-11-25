@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Spendly — Personal Finance Tracker</title>
+<meta name="description" content="Spendly — Premium personal finance tracker. Track income, expenses, budgets and analytics."/>
+<meta name="theme-color" content="#2867FF" media="(prefers-color-scheme: light)"/>
+<meta name="theme-color" content="#0f1428" media="(prefers-color-scheme: dark)"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Spendly"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg"/>
+<link rel="apple-touch-icon" href="assets/spendly-icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="brand-bar">
+    <div class="brand">
+      <img src="assets/favicon.svg" alt="Spendly" class="brand-logo"/>
+      <span class="brand-name">Spendly</span>
+    </div>
+    <div class="brand-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <span class="theme-icon sun">☀</span>
+        <span class="theme-icon moon">☾</span>
+      </button>
+      <button class="brand-avatar" id="brandAvatar"><span id="avatarInitial">S</span></button>
+    </div>
+  </header>
+
+  <main class="pages" id="pages">
+
+    <!-- HOME -->
+    <section class="page active" id="page-home" data-page="home">
+      <div class="page-inner">
+        <div class="greeting anim" style="--d:.02s">
+          <h1 id="greetTitle">Good morning</h1>
+          <p id="greetSub">Here's your money at a glance.</p>
+        </div>
+
+        <div class="card balance-card anim" style="--d:.06s">
+          <div class="balance-orb orb-a"></div>
+          <div class="balance-orb orb-b"></div>
+          <p class="balance-label">Current Balance</p>
+          <h2 class="balance-value" id="balanceValue">Rs 0.00</h2>
+          <div class="balance-foot">
+            <span class="pill-chip" id="balanceCount">0 transactions</span>
+            <span class="pill-chip" id="balanceMonth"></span>
+          </div>
+        </div>
+
+        <div class="quick-row anim" style="--d:.1s">
+          <button class="quick-btn income" data-open="income"><span class="q-icon">↓</span> Add Income</button>
+          <button class="quick-btn expense" data-open="expense"><span class="q-icon">↑</span> Add Expense</button>
+        </div>
+
+        <div class="stat-grid anim" style="--d:.14s">
+          <div class="card stat-card">
+            <span class="stat-icon si-blue">↓</span>
+            <p class="stat-label">Total Income</p>
+            <h3 class="stat-value" id="statIncome">Rs 0</h3>
+          </div>
+          <div class="card stat-card">
+            <span class="stat-icon si-purple">↑</span>
+            <p class="stat-label">Total Expenses</p>
+            <h3 class="stat-value" id="statExpense">Rs 0</h3>
+          </div>
+          <div class="card stat-card">
+            <span class="stat-icon si-green">✦</span>
+            <p class="stat-label">Savings Rate</p>
+            <h3 class="stat-value" id="statSavings">0%</h3>
+          </div>
+        </div>
+
+        <div class="card section-card anim" style="--d:.18s">
+          <div class="card-head"><h3>Monthly Spending</h3><span class="card-tag">Last 6 months</span></div>
+          <div class="chart-wrap" id="barChart"></div>
+        </div>
+
+        <div class="card section-card anim" style="--d:.22s">
+          <div class="card-head"><h3>Monthly Budget</h3><span class="card-tag" id="budgetTag"></span></div>
+          <div class="budget-row">
+            <div class="ring-wrap" id="budgetRing"></div>
+            <div class="budget-info">
+              <p class="bi-label">Spent this month</p>
+              <p class="bi-value" id="budgetSpent">Rs 0</p>
+              <p class="bi-label">of <span id="budgetTotal">Rs 0</span></p>
+              <p class="bi-note" id="budgetNote"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section-card anim" style="--d:.26s">
+          <div class="card-head"><h3>Recent Activity</h3><button class="link-btn" data-goto="transactions">View all →</button></div>
+          <ul class="tx-list" id="recentList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="page" id="page-analytics" data-page="analytics">
+      <div class="page-inner">
+        <div class="greeting anim" style="--d:.02s"><h1>Analytics</h1><p>Understand where your money goes.</p></div>
+        <div class="seg anim" style="--d:.06s" id="anRange">
+          <button class="seg-btn active" data-range="weekly">Weekly</button>
+          <button class="seg-btn" data-range="monthly">Monthly</button>
+        </div>
+        <div class="card section-card anim" style="--d:.1s">
+          <div class="card-head"><h3>Income vs Expenses</h3>
+            <div class="legend"><span><i class="dot dot-blue"></i>Income</span><span><i class="dot dot-purple"></i>Expense</span></div>
+          </div>
+          <div class="chart-wrap" id="ivChart"></div>
+        </div>
+        <div class="card section-card anim" style="--d:.14s">
+          <div class="card-head"><h3>Category Breakdown</h3><span class="card-tag">This month</span></div>
+          <div class="donut-row">
+            <div class="donut-wrap" id="donutChart"></div>
+            <ul class="donut-legend" id="donutLegend"></ul>
+          </div>
+        </div>
+        <div class="card section-card anim" style="--d:.18s">
+          <div class="card-head"><h3>Spending Trend</h3><span class="card-tag">Last 30 days</span></div>
+          <div class="chart-wrap" id="trendChart"></div>
+        </div>
+        <div class="card section-card anim" style="--d:.22s">
+          <div class="card-head"><h3>Budget Usage</h3></div>
+          <div id="budgetUsage"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="page" id="page-transactions" data-page="transactions">
+      <div class="page-inner">
+        <div class="greeting anim" style="--d:.02s"><h1>Transactions</h1><p>All your money movements.</p></div>
+        <div class="tx-controls anim" style="--d:.06s">
+          <div class="search-box"><span class="s-icon">⌕</span><input type="text" id="txSearch" placeholder="Search notes or categories…"/></div>
+          <div class="seg" id="txFilter">
+            <button class="seg-btn active" data-f="all">All</button>
+            <button class="seg-btn" data-f="income">Income</button>
+            <button class="seg-btn" data-f="expense">Expense</button>
+          </div>
+        </div>
+        <div id="txGroups" class="tx-groups"></div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="page" id="page-profile" data-page="profile">
+      <div class="page-inner">
+        <div class="greeting anim" style="--d:.02s"><h1>Profile</h1><p>Make Spendly yours.</p></div>
+        <div class="card profile-head anim" style="--d:.06s">
+          <div class="pf-avatar" id="pfAvatar">S</div>
+          <div><h3 id="pfName">Spendly User</h3><p class="pf-sub" id="pfSub">Personal Finance Tracker</p></div>
+        </div>
+        <div class="card section-card anim" style="--d:.1s">
+          <div class="card-head"><h3>Appearance</h3></div>
+          <div class="theme-options">
+            <button class="theme-opt" data-theme="light"><span class="theme-opt-icon">☀</span>Light</button>
+            <button class="theme-opt" data-theme="dark"><span class="theme-opt-icon">☾</span>Dark</button>
+            <button class="theme-opt" data-theme="auto"><span class="theme-opt-icon">◐</span>Auto</button>
+          </div>
+        </div>
+        <div class="card section-card anim" style="--d:.14s">
+          <div class="card-head"><h3>Preferences</h3></div>
+          <label class="field"><span class="field-label">Display name</span><input class="input" id="set_name" type="text" maxlength="24" placeholder="Your name"/></label>
+          <label class="field"><span class="field-label">Currency</span>
+            <select class="input" id="set_currency">
+              <option value="LKR|Rs">LKR — Sri Lankan Rupee (Rs)</option>
+              <option value="USD|$">USD — US Dollar ($)</option>
+              <option value="EUR|€">EUR — Euro (€)</option>
+              <option value="GBP|£">GBP — Pound (£)</option>
+              <option value="INR|₹">INR — Indian Rupee (₹)</option>
+              <option value="AUD|A$">AUD — Australian Dollar (A$)</option>
+            </select>
+          </label>
+          <label class="field"><span class="field-label">Monthly budget</span><input class="input" id="set_budget" type="number" min="0" step="100" placeholder="e.g. 50000"/></label>
+          <button class="btn-primary" id="saveSettings">Save changes</button>
+        </div>
+        <div class="card section-card anim" style="--d:.18s">
+          <div class="card-head"><h3>Data</h3></div>
+          <div class="data-row">
+            <button class="btn-ghost" id="exportData">Export JSON</button>
+            <button class="btn-ghost" id="sampleData">Load sample</button>
+          </div>
+          <button class="btn-danger" id="clearData">Clear all transactions</button>
+        </div>
+        <div class="about anim" style="--d:.22s">
+          <img src="assets/favicon.svg" alt=""/>
+          <p>Spendly v1.0 — crafted with care.<br/>Your data never leaves this device.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FLOATING PILL NAV -->
+  <nav class="pill-nav" aria-label="Primary">
+    <button class="nav-item active" data-goto="home"><span class="nav-ico">⌂</span><span class="nav-lbl">Home</span></button>
+    <button class="nav-item" data-goto="analytics"><span class="nav-ico">▤</span><span class="nav-lbl">Analytics</span></button>
+    <button class="nav-plus" id="openTx" aria-label="Add transaction"><span class="plus-core">+</span></button>
+    <button class="nav-item" data-goto="transactions"><span class="nav-ico">≣</span><span class="nav-lbl">Transactions</span></button>
+    <button class="nav-item" data-goto="profile"><span class="nav-ico">◔</span><span class="nav-lbl">Profile</span></button>
+  </nav>
+
+  <!-- SHEET -->
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+    <div class="sheet-handle"></div>
+    <h3 id="sheetTitle" class="sheet-title">Add Transaction</h3>
+    <div class="seg type-seg" id="typeSeg">
+      <button class="seg-btn active" data-type="expense">Expense</button>
+      <button class="seg-btn" data-type="income">Income</button>
+    </div>
+    <div class="amount-box">
+      <span class="amount-cur" id="amountCur">Rs</span>
+      <input class="amount-input" id="txAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"/>
+    </div>
+    <p class="field-label">Category</p>
+    <div class="cat-grid" id="catGrid"></div>
+    <div class="two-col">
+      <label class="field"><span class="field-label">Date</span><input class="input" id="txDate" type="date"/></label>
+      <label class="field"><span class="field-label">Note (optional)</span><input class="input" id="txNote" type="text" maxlength="60" placeholder="e.g. Lunch with team"/></label>
+    </div>
+    <button class="btn-primary" id="saveTx">Save transaction</button>
+    <button class="btn-ghost sheet-cancel" id="cancelTx">Cancel</button>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
